@@ -137,7 +137,9 @@ jobs:
             > /tmp/clickhouse-exporter-existing.yaml
 
       - name: Validate dashboards JSON
-        run: python3 -m json.tool deploy/grafana/dashboards/clickhouse.json > /dev/null
+        run: |
+          python3 -m json.tool deploy/grafana/dashboards/clickhouse.json > /dev/null
+          python3 -m json.tool deploy/grafana/import/clickhouse.json > /dev/null
 
       - name: Validate compose
         run: docker compose -f deploy/docker-compose.yml config > /dev/null

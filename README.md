@@ -187,9 +187,20 @@ Provision one datasource:
 - Prometheus (required)
 
 Grafana does not need a ClickHouse datasource, a ClickHouse plugin or a
-ClickHouse credential. The dashboard lives in
-[`deploy/grafana/dashboards/clickhouse.json`](deploy/grafana/dashboards/clickhouse.json)
-and can be provisioned from a folder or imported manually.
+ClickHouse credential. There are two dashboard files:
+
+- [`deploy/grafana/dashboards/clickhouse.json`](deploy/grafana/dashboards/clickhouse.json)
+  — used by the compose provisioning. It has a top-level **Prometheus**
+  datasource variable (`${datasource}`), so you can switch datasources from the
+  dashboard.
+- [`deploy/grafana/import/clickhouse.json`](deploy/grafana/import/clickhouse.json)
+  — for manual import. It uses Grafana `__inputs` and `${DS_PROMETHEUS}`, so the
+  import wizard asks you to select a **Prometheus** datasource and substitutes it
+  into every panel.
+
+For manual import into production use the import file. For provisioning, either
+create a Prometheus datasource with UID `prometheus` or change the variable's
+default value to your UID.
 
 ## Compatibility
 
