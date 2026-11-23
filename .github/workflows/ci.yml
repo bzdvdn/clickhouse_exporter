@@ -60,7 +60,7 @@ jobs:
       - name: Golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: latest
+          version: v2.15.0
           args: --timeout=5m --enable=gosec,errcheck,bodyclose,noctx,contextcheck
 
   integration:
@@ -69,11 +69,14 @@ jobs:
     services:
       clickhouse:
         image: clickhouse/clickhouse-server:24.8
+        env:
+          CLICKHOUSE_USER: default
+          CLICKHOUSE_PASSWORD: exporter
         ports:
           - 9000:9000
           - 8123:8123
         options: >-
-          --health-cmd "clickhouse-client --query 'SELECT 1'"
+          --health-cmd "clickhouse-client --user default --password exporter --query 'SELECT 1'"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 30
@@ -87,12 +90,12 @@ jobs:
 
       - name: Integration test
         env:
-          CLICKHOUSE_DSN: clickhouse://default@127.0.0.1:9000/default
+          CLICKHOUSE_DSN: clickhouse://default:exporter@127.0.0.1:9000/default
         run: go test -tags=integration -v ./internal/collector
 
       - name: Exporter smoke test
         env:
-          CLICKHOUSE_DSN: clickhouse://default@127.0.0.1:9000/default
+          CLICKHOUSE_DSN: clickhouse://default:exporter@127.0.0.1:9000/default
         run: |
           go build -o /tmp/clickhouse-exporter ./cmd/clickhouse-exporter
           /tmp/clickhouse-exporter --listen-address :19116 &

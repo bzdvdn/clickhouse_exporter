@@ -68,7 +68,11 @@ func run() error {
 		stop()
 		return err
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			logger.Warn("close clickhouse client", "error", err)
+		}
+	}()
 
 	labels := prometheus.Labels{}
 	for k, v := range cfg.Labels {

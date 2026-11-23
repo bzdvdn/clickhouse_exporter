@@ -38,6 +38,12 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      - name: Golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.15.0
+          args: --timeout=5m --enable=gosec,errcheck,bodyclose,noctx,contextcheck
+
       - uses: azure/setup-helm@v4
         with:
           version: v3.16.4
