@@ -1,0 +1,65 @@
+# clickhouse-exporter configuration.
+# Flags and environment variables override values from this file.
+
+listen_address: ":9116"
+log_level: info
+# Every metric name is prefixed with this value. Set to "" to disable.
+metric_prefix: chx_
+
+clickhouse:
+  # In production use TLS and a password:
+  # clickhouse://exporter:secret@ch-1:9440/default?secure=true
+  dsn: "clickhouse://exporter:change-me@127.0.0.1:9000/default"
+  timeout: 5s
+  settings:
+    max_execution_time: 4
+    max_threads: 2
+    max_result_rows: 20000
+    result_overflow_mode: break
+    log_queries: 0
+    log_query_threads: 0
+
+# Added to every exported series. Prometheus adds instance/job itself.
+labels:
+  cluster: prod
+  node: ch-1
+  # exporter: clickhouse-exporter   # set automatically unless overridden
+
+collectors:
+  node:
+    enabled: true
+    interval: 15s
+  query_load:
+    enabled: true
+    interval: 15s
+  workload:
+    enabled: true
+    interval: 30s
+  tables:
+    enabled: true
+    interval: 60s
+  replication:
+    enabled: true
+    interval: 30s
+
+workload:
+  # Per-user aggregates are computed over this window on every refresh.
+  window: 5m
+  # Quantiles need more data, so they use a wider window.
+  latency_window: 15m
+  # Bounds cardinality: number of user/query_kind/table series.
+  top_n: 200
+  # The exporter's own user is appended automatically.
+  exclude_users: []
+  # Example: exclude_users: [exporter, default]
+
+tables:
+  # part_log-based write metrics window.
+  window: 5m
+  top_n: 200
+  exclude_databases: [system, INFORMATION_SCHEMA, information_schema]
+  exclude_tables: []
+  # Example: exclude_tables: [tmp_import]
+
+replication:
+  top_n: 500

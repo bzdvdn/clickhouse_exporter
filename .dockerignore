@@ -1,0 +1,10 @@
+.git
+.gitignore
+bin/
+dist/
+deploy/
+*.md
+*.log
+.env
+.idea/
+.vscode/

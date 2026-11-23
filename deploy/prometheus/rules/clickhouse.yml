@@ -1,0 +1,87 @@
+groups:
+  - name: clickhouse
+    rules:
+      - alert: ClickHouseReplicaReadonly
+        expr: max by (cluster, instance, database, table) (chx_clickhouse_replica_readonly{exporter=~".+"}) == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ClickHouse replica is read-only ({{ $labels.database }}.{{ $labels.table }})"
+
+      - alert: ClickHouseReplicationDelay
+        expr: max by (cluster, instance, database, table) (chx_clickhouse_replica_absolute_delay_seconds{exporter=~".+"}) > 300
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ClickHouse replication delay > 5m ({{ $labels.database }}.{{ $labels.table }})"
+
+      - alert: ClickHouseDiskLow
+        expr: chx_clickhouse_disk_free_bytes{exporter=~".+"} / chx_clickhouse_disk_total_bytes{exporter=~".+"} < 0.15
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ClickHouse disk {{ $labels.disk }} has less than 15% free"
+
+      - alert: ClickHouseDiskReadonly
+        expr: max by (cluster, instance, disk) (chx_clickhouse_disk_readonly{exporter=~".+"}) == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ClickHouse disk {{ $labels.disk }} is read-only"
+
+      - alert: ClickHouseTooManyParts
+        expr: max by (cluster, instance) (chx_clickhouse_max_part_count_for_partition{exporter=~".+"}) > 300
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Too many parts per partition on {{ $labels.instance }}"
+
+      - alert: ClickHouseMutationsStuck
+        expr: max by (cluster, instance, database, table) (chx_clickhouse_table_mutation_oldest_seconds{exporter=~".+"}) > 3600
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Mutation is stuck for more than 1h ({{ $labels.database }}.{{ $labels.table }})"
+
+      - alert: ClickHouseUserDominatesCPU
+        expr: |
+          sum by (cluster, user) (chx_clickhouse_user_cpu_seconds{exporter=~".+"})
+          /
+          on (cluster) group_left
+          sum by (cluster) (chx_clickhouse_user_cpu_seconds{exporter=~".+"})
+          > 0.6
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "User {{ $labels.user }} consumes more than 60% of query CPU"
+
+      - alert: ClickHouseQueryErrors
+        expr: sum by (cluster, instance) (chx_clickhouse_user_errors{exporter=~".+"}) > 10
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "More than 10 failed queries in the window on {{ $labels.instance }}"
+
+      - alert: ClickHouseExporterStale
+        expr: time() - chx_clickhouse_exporter_last_success_timestamp_seconds{exporter=~".+"} > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Collector {{ $labels.collector }} has not succeeded for 5 minutes"
+
+      - alert: ClickHouseSourceMissing
+        expr: chx_clickhouse_exporter_source_available{exporter=~".+"} == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Source system table {{ $labels.source }} is unavailable"

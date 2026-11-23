@@ -1,0 +1,16 @@
+ClickHouse exporter has been installed.
+
+Metrics:
+  kubectl port-forward svc/{{ include "clickhouse-exporter.fullname" . }} 9116:{{ .Values.service.port }}
+  curl http://localhost:9116/metrics
+
+Prometheus:
+  - point the scrape config at service {{ include "clickhouse-exporter.fullname" . }}:{{ .Values.service.port }}
+  - or enable serviceMonitor.enabled=true if the Prometheus Operator CRD is installed
+
+Configuration:
+  - ConfigMap: {{ include "clickhouse-exporter.fullname" . }}-config
+  - DSN secret: {{ include "clickhouse-exporter.secretName" . }} (key {{ .Values.clickhouse.secretKey }})
+
+Remember to grant the exporter user SELECT on system.* and on every monitored
+database; otherwise system.parts and friends are filtered by table access.
