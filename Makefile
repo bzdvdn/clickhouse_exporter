@@ -2,7 +2,7 @@ VERSION ?= dev
 DSN ?= clickhouse://default@127.0.0.1:9000/default
 COMPOSE ?= docker compose -f deploy/docker-compose.yml
 
-.PHONY: build test integration vet fmt lint vuln helm-lint run docker demo down clean
+.PHONY: build test integration vet fmt lint vuln helm-lint ci run docker demo down clean
 
 build:
 	go build -trimpath -ldflags="-s -w -X main.version=$(VERSION)" -o bin/clickhouse-exporter ./cmd/clickhouse-exporter
@@ -26,6 +26,8 @@ vuln:
 helm-lint:
 	docker run --rm -v "$(PWD)/deploy/helm:/charts" alpine/helm:latest lint --strict /charts/clickhouse-exporter \
 		--set clickhouse.dsn='clickhouse://exporter@clickhouse:9000/default'
+
+ci: test vet lint vuln helm-lint
 
 fmt:
 	gofmt -w .

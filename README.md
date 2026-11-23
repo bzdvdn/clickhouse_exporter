@@ -166,7 +166,7 @@ kubectl -n monitoring create secret generic clickhouse-exporter-dsn \
 
 helm upgrade --install clickhouse-exporter deploy/helm/clickhouse-exporter \
   --namespace monitoring --create-namespace \
-  --set image.repository=registry.example.com/clickhouse-exporter \
+  --set image.repository=ghcr.io/bzdvdn/clickhouse_exporter \
   --set image.tag=0.1.0 \
   --set clickhouse.existingSecret=clickhouse-exporter-dsn \
   --set config.labels.cluster=prod \
@@ -421,6 +421,79 @@ make integration DSN='clickhouse://exporter@127.0.0.1:9000/default'
 
 The project is built and scanned with Go 1.26.11; `govulncheck` must report no
 vulnerabilities before a release.
+
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on push and pull
+request:
+
+- **Test and lint** — build, `go vet`, race tests, staticcheck, golangci-lint and
+  govulncheck.
+- **Integration with ClickHouse** — a ClickHouse 24.8 service, the integration
+  collector test and an exporter smoke test that checks `/readyz` and the
+  `chx_` metric prefix.
+- **Manifests and image** — Helm lint/template, dashboard JSON validation,
+  `docker compose config`, `promtool check rules` and `docker build`.
+
+Locally the same checks are available as `make ci` (without the ClickHouse
+service) and `make integration`.
+
+## Releases
+
+Push a semver tag:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) publishes:
+
+- multi-arch image `ghcr.io/bzdvdn/clickhouse_exporter:0.1.0` and `:latest`
+  (`linux/amd64`, `linux/arm64`);
+- Helm chart `oci://ghcr.io/bzdvdn/charts/clickhouse-exporter:0.1.0`;
+- a GitHub release with the packaged chart attached.
+
+Install the published chart:
+
+```bash
+helm install clickhouse-exporter \
+  oci://ghcr.io/bzdvdn/charts/clickhouse-exporter \
+  --version 0.1.0 \
+  --set clickhouse.existingSecret=clickhouse-exporter-dsn \
+  --set config.labels.cluster=prod
+```
+
+The release workflow rewrites the chart's default image repository to the actual
+GHCR repository before packaging.
+
+### Make the GHCR packages public
+
+GHCR creates new packages as **private**, even when the repository is public.
+Package visibility is a registry setting, not a workflow flag. After the first
+release, set it once for each package:
+
+1. Open the repository on GitHub → **Packages**.
+2. Select the image package (`clickhouse_exporter`) → **Package settings**.
+3. Under **Danger Zone** → **Change visibility** → **Public**.
+4. Repeat for the chart package (`charts/clickhouse-exporter`).
+
+Once public, future versions inherit the visibility. Public container packages
+allow anonymous access; private packages require `imagePullSecrets` for pods and
+`helm registry login` for the chart.
+
+For an organization, an owner can also set the organization's default package
+visibility under **Organization settings → Packages**, so new packages are
+created public from the start.
+
+Verify without credentials:
+
+```bash
+docker pull ghcr.io/bzdvdn/clickhouse_exporter:0.1.0
+helm show chart oci://ghcr.io/bzdvdn/charts/clickhouse-exporter --version 0.1.0
+```
+
+The channel is tags only: a normal push to `main` runs CI but does not publish.
 
 ## Roadmap
 

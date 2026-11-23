@@ -7,12 +7,27 @@ The chart does **not** deploy ClickHouse, Prometheus or Grafana.
 
 ## Install
 
+### OCI registry
+
+Released charts are published to GHCR. Set the package to public once in the
+GitHub package settings if anonymous `helm install` is required; otherwise run
+`helm registry login ghcr.io` first.
+
+```bash
+helm upgrade --install clickhouse-exporter \
+  oci://ghcr.io/bzdvdn/charts/clickhouse-exporter \
+  --version 0.1.0 \
+  --namespace monitoring --create-namespace \
+  --set clickhouse.existingSecret=clickhouse-exporter-dsn \
+  --set config.labels.cluster=prod
+```
+
 ### Chart-managed DSN Secret
 
 ```bash
 helm upgrade --install clickhouse-exporter ./deploy/helm/clickhouse-exporter \
   --namespace monitoring --create-namespace \
-  --set image.repository=registry.example.com/clickhouse-exporter \
+  --set image.repository=ghcr.io/bzdvdn/clickhouse_exporter \
   --set image.tag=0.1.0 \
   --set clickhouse.dsn='clickhouse://exporter:secret@ch-1:9000/default' \
   --set config.labels.cluster=prod \
@@ -27,7 +42,7 @@ kubectl -n monitoring create secret generic clickhouse-exporter-dsn \
 
 helm upgrade --install clickhouse-exporter ./deploy/helm/clickhouse-exporter \
   --namespace monitoring --create-namespace \
-  --set image.repository=registry.example.com/clickhouse-exporter \
+  --set image.repository=ghcr.io/bzdvdn/clickhouse_exporter \
   --set image.tag=0.1.0 \
   --set clickhouse.existingSecret=clickhouse-exporter-dsn \
   --set config.labels.cluster=prod \
@@ -59,7 +74,7 @@ Requires the Prometheus Operator CRDs.
 
 | Value | Default | Meaning |
 |---|---|---|
-| `image.repository` | `ghcr.io/your-org/clickhouse-exporter` | Set to your registry |
+| `image.repository` | `ghcr.io/bzdvdn/clickhouse_exporter` | Published image repository; override for a mirror |
 | `image.tag` | chart appVersion | Image tag |
 | `clickhouse.existingSecret` | `""` | Secret with the DSN |
 | `clickhouse.secretKey` | `dsn` | Key inside that Secret |
