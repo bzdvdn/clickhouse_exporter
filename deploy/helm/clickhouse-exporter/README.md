@@ -16,7 +16,7 @@ GitHub package settings if anonymous `helm install` is required; otherwise run
 ```bash
 helm upgrade --install clickhouse-exporter \
   oci://ghcr.io/bzdvdn/charts/clickhouse-exporter \
-  --version 0.1.0 \
+  --version 0.1.1 \
   --namespace monitoring --create-namespace \
   --set clickhouse.existingSecret=clickhouse-exporter-dsn \
   --set config.labels.cluster=prod
@@ -28,7 +28,7 @@ helm upgrade --install clickhouse-exporter \
 helm upgrade --install clickhouse-exporter ./deploy/helm/clickhouse-exporter \
   --namespace monitoring --create-namespace \
   --set image.repository=ghcr.io/bzdvdn/clickhouse_exporter \
-  --set image.tag=0.1.0 \
+  --set image.tag=0.1.1 \
   --set clickhouse.dsn='clickhouse://exporter:secret@ch-1:9000/default' \
   --set config.labels.cluster=prod \
   --set config.labels.node=ch-1
@@ -43,7 +43,7 @@ kubectl -n monitoring create secret generic clickhouse-exporter-dsn \
 helm upgrade --install clickhouse-exporter ./deploy/helm/clickhouse-exporter \
   --namespace monitoring --create-namespace \
   --set image.repository=ghcr.io/bzdvdn/clickhouse_exporter \
-  --set image.tag=0.1.0 \
+  --set image.tag=0.1.1 \
   --set clickhouse.existingSecret=clickhouse-exporter-dsn \
   --set config.labels.cluster=prod \
   --set config.labels.node=ch-1

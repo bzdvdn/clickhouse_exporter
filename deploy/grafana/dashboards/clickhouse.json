@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "ClickHouse monitoring: workload, per-database load, users, node/tables. Prometheus-only: every panel reads exporter metrics through Prometheus; no SQL panels or ClickHouse datasource. Select the target Prometheus in the Prometheus datasource variable. Database read load is approximate.",
+  "description": "ClickHouse monitoring: workload, per-database load, users, node/tables. Prometheus-only: every panel reads exporter metrics through Prometheus; no SQL panels or ClickHouse datasource. Memory pressure is the sum of query peaks over the window; Current memory comes from system.processes. Select the target Prometheus in the Prometheus datasource variable. Database read load is approximate.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -681,7 +681,7 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 8,
+        "w": 6,
         "x": 0,
         "y": 33
       },
@@ -711,16 +711,16 @@
     {
       "id": 15,
       "type": "bargauge",
-      "title": "Top users by memory",
-      "description": "",
+      "title": "Memory pressure (sum of query memory, 5m)",
+      "description": "Sum of per-query memory usage over the workload window. This is not current RAM: each query is counted once, and memory usage from different queries does not overlap in time.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
         "h": 9,
-        "w": 8,
-        "x": 8,
+        "w": 6,
+        "x": 6,
         "y": 33
       },
       "targets": [
@@ -749,6 +749,42 @@
     {
       "id": 16,
       "type": "bargauge",
+      "title": "Current memory by user",
+      "description": "Current memory of running queries from system.processes. No data means no queries are running right now.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 12,
+        "y": 33
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (user) (chx_clickhouse_user_running_memory_bytes{exporter=~\"$exporter\",cluster=~\"$cluster\",instance=~\"$instance\"}))",
+          "legendFormat": "{{user}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color"
+      }
+    },
+    {
+      "id": 17,
+      "type": "bargauge",
       "title": "Top tables by size",
       "description": "",
       "datasource": {
@@ -757,8 +793,8 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 8,
-        "x": 16,
+        "w": 6,
+        "x": 18,
         "y": 33
       },
       "targets": [
@@ -785,7 +821,7 @@
       }
     },
     {
-      "id": 17,
+      "id": 18,
       "type": "row",
       "title": "Databases — load and ownership",
       "collapsed": false,
@@ -799,7 +835,7 @@
       "repeat": null
     },
     {
-      "id": 18,
+      "id": 19,
       "type": "timeseries",
       "title": "Top databases by size",
       "description": "Active parts size per database.",
@@ -847,7 +883,7 @@
       }
     },
     {
-      "id": 19,
+      "id": 20,
       "type": "timeseries",
       "title": "Database write load (bytes/s)",
       "description": "Compressed bytes written per database over the workload window. Respects the user filter.",
@@ -895,7 +931,7 @@
       }
     },
     {
-      "id": 20,
+      "id": 21,
       "type": "timeseries",
       "title": "Database read load (approx, bytes/s)",
       "description": "Approximate: read_bytes of every query touching the database is counted in each database it reads.",
@@ -943,7 +979,7 @@
       }
     },
     {
-      "id": 21,
+      "id": 22,
       "type": "timeseries",
       "title": "Active queries by database",
       "description": "Current system.processes grouped by current_database. Respects the user filter.",
@@ -991,7 +1027,7 @@
       }
     },
     {
-      "id": 22,
+      "id": 23,
       "type": "timeseries",
       "title": "Active memory by database",
       "description": "Current memory of running queries grouped by current_database.",
@@ -1039,7 +1075,7 @@
       }
     },
     {
-      "id": 23,
+      "id": 24,
       "type": "timeseries",
       "title": "Who is active now, by database",
       "description": "Current running queries per user and database.",
@@ -1087,7 +1123,7 @@
       }
     },
     {
-      "id": 24,
+      "id": 25,
       "type": "timeseries",
       "title": "Database read queries (approx)",
       "description": "Number of queries touching each database; a query reading several databases counts in each.",
@@ -1135,7 +1171,7 @@
       }
     },
     {
-      "id": 25,
+      "id": 26,
       "type": "timeseries",
       "title": "Oldest running query by database",
       "description": "Elapsed time of the oldest running query in the database.",
@@ -1183,7 +1219,7 @@
       }
     },
     {
-      "id": 26,
+      "id": 27,
       "type": "row",
       "title": "User Deep Dive",
       "collapsed": false,
@@ -1197,7 +1233,7 @@
       "repeat": null
     },
     {
-      "id": 27,
+      "id": 28,
       "type": "stat",
       "title": "CPU cores",
       "description": "",
@@ -1256,7 +1292,7 @@
       }
     },
     {
-      "id": 28,
+      "id": 29,
       "type": "stat",
       "title": "Memory (sum of peaks)",
       "description": "",
@@ -1315,7 +1351,7 @@
       }
     },
     {
-      "id": 29,
+      "id": 30,
       "type": "stat",
       "title": "Written bytes/s",
       "description": "",
@@ -1374,7 +1410,7 @@
       }
     },
     {
-      "id": 30,
+      "id": 31,
       "type": "stat",
       "title": "Read bytes/s",
       "description": "",
@@ -1433,7 +1469,7 @@
       }
     },
     {
-      "id": 31,
+      "id": 32,
       "type": "stat",
       "title": "Running queries",
       "description": "",
@@ -1492,7 +1528,7 @@
       }
     },
     {
-      "id": 32,
+      "id": 33,
       "type": "stat",
       "title": "Errors (window)",
       "description": "",
@@ -1551,7 +1587,7 @@
       }
     },
     {
-      "id": 33,
+      "id": 34,
       "type": "timeseries",
       "title": "CPU by query kind (cores)",
       "description": "",
@@ -1599,7 +1635,7 @@
       }
     },
     {
-      "id": 34,
+      "id": 35,
       "type": "timeseries",
       "title": "Read/write bytes/s by kind",
       "description": "",
@@ -1652,7 +1688,7 @@
       }
     },
     {
-      "id": 35,
+      "id": 36,
       "type": "timeseries",
       "title": "Queries/s by kind",
       "description": "",
@@ -1700,7 +1736,7 @@
       }
     },
     {
-      "id": 36,
+      "id": 37,
       "type": "timeseries",
       "title": "Duration p95 / p99",
       "description": "",
@@ -1748,7 +1784,7 @@
       }
     },
     {
-      "id": 37,
+      "id": 38,
       "type": "timeseries",
       "title": "Errors by kind",
       "description": "",
@@ -1796,7 +1832,7 @@
       }
     },
     {
-      "id": 38,
+      "id": 39,
       "type": "timeseries",
       "title": "Running memory",
       "description": "",
@@ -1844,7 +1880,7 @@
       }
     },
     {
-      "id": 39,
+      "id": 40,
       "type": "bargauge",
       "title": "Tables written (bytes)",
       "description": "",
@@ -1882,7 +1918,7 @@
       }
     },
     {
-      "id": 40,
+      "id": 41,
       "type": "bargauge",
       "title": "Tables written (rows)",
       "description": "",
@@ -1920,7 +1956,7 @@
       }
     },
     {
-      "id": 41,
+      "id": 42,
       "type": "bargauge",
       "title": "Tables written (parts)",
       "description": "",
@@ -1958,7 +1994,7 @@
       }
     },
     {
-      "id": 42,
+      "id": 43,
       "type": "row",
       "title": "Node, Tables & Replication",
       "collapsed": false,
@@ -1972,7 +2008,7 @@
       "repeat": null
     },
     {
-      "id": 43,
+      "id": 44,
       "type": "stat",
       "title": "Uptime",
       "description": "",
@@ -2031,7 +2067,7 @@
       }
     },
     {
-      "id": 44,
+      "id": 45,
       "type": "stat",
       "title": "Memory tracking",
       "description": "",
@@ -2090,7 +2126,7 @@
       }
     },
     {
-      "id": 45,
+      "id": 46,
       "type": "stat",
       "title": "Memory limit",
       "description": "",
@@ -2149,7 +2185,7 @@
       }
     },
     {
-      "id": 46,
+      "id": 47,
       "type": "stat",
       "title": "Max parts / partition",
       "description": "",
@@ -2208,7 +2244,7 @@
       }
     },
     {
-      "id": 47,
+      "id": 48,
       "type": "stat",
       "title": "Readonly replicas",
       "description": "",
@@ -2267,7 +2303,7 @@
       }
     },
     {
-      "id": 48,
+      "id": 49,
       "type": "stat",
       "title": "Detached parts",
       "description": "",
@@ -2326,7 +2362,7 @@
       }
     },
     {
-      "id": 49,
+      "id": 50,
       "type": "timeseries",
       "title": "Memory tracking vs limit",
       "description": "",
@@ -2379,7 +2415,7 @@
       }
     },
     {
-      "id": 50,
+      "id": 51,
       "type": "timeseries",
       "title": "Disk free ratio",
       "description": "",
@@ -2427,7 +2463,7 @@
       }
     },
     {
-      "id": 51,
+      "id": 52,
       "type": "timeseries",
       "title": "Parts per table",
       "description": "",
@@ -2475,7 +2511,7 @@
       }
     },
     {
-      "id": 52,
+      "id": 53,
       "type": "bargauge",
       "title": "Top tables by disk",
       "description": "",
@@ -2513,7 +2549,7 @@
       }
     },
     {
-      "id": 53,
+      "id": 54,
       "type": "timeseries",
       "title": "Merges running",
       "description": "",
@@ -2561,7 +2597,7 @@
       }
     },
     {
-      "id": 54,
+      "id": 55,
       "type": "timeseries",
       "title": "Merge memory",
       "description": "",
@@ -2609,7 +2645,7 @@
       }
     },
     {
-      "id": 55,
+      "id": 56,
       "type": "timeseries",
       "title": "Mutations pending",
       "description": "",
@@ -2657,7 +2693,7 @@
       }
     },
     {
-      "id": 56,
+      "id": 57,
       "type": "timeseries",
       "title": "Oldest mutation (seconds)",
       "description": "",
@@ -2705,7 +2741,7 @@
       }
     },
     {
-      "id": 57,
+      "id": 58,
       "type": "timeseries",
       "title": "Replication delay",
       "description": "",
@@ -2753,7 +2789,7 @@
       }
     },
     {
-      "id": 58,
+      "id": 59,
       "type": "timeseries",
       "title": "Replication queue tasks",
       "description": "",
@@ -2801,7 +2837,7 @@
       }
     },
     {
-      "id": 59,
+      "id": 60,
       "type": "timeseries",
       "title": "Insert rows/s by table",
       "description": "",
@@ -2849,7 +2885,7 @@
       }
     },
     {
-      "id": 60,
+      "id": 61,
       "type": "timeseries",
       "title": "Errors by code",
       "description": "",

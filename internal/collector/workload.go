@@ -60,7 +60,7 @@ func NewWorkload(reg prometheus.Registerer, client *ch.Client, cfg config.Collec
 
 		userQueries:      gauge("clickhouse_user_queries", "Queries over the workload window.", l, "user", "query_kind"),
 		userCPU:          gauge("clickhouse_user_cpu_seconds", "CPU seconds over the workload window.", l, "user", "query_kind"),
-		userMemory:       gauge("clickhouse_user_memory_bytes", "Sum of per-query memory peaks over the workload window.", l, "user", "query_kind"),
+		userMemory:       gauge("clickhouse_user_memory_bytes", "Sum of per-query memory usage over the workload window; not current RAM.", l, "user", "query_kind"),
 		userReadBytes:    gauge("clickhouse_user_read_bytes", "Bytes read over the workload window.", l, "user", "query_kind"),
 		userWrittenBytes: gauge("clickhouse_user_written_bytes", "Bytes written over the workload window.", l, "user", "query_kind"),
 		userReadRows:     gauge("clickhouse_user_read_rows", "Rows read over the workload window.", l, "user", "query_kind"),
@@ -69,7 +69,7 @@ func NewWorkload(reg prometheus.Registerer, client *ch.Client, cfg config.Collec
 		userDuration:     gauge("clickhouse_user_query_duration_seconds", "Query duration percentiles over the latency window.", l, "user", "query_kind", "percentile"),
 
 		runningQueries: gauge("clickhouse_user_running_queries", "Queries currently running.", l, "user"),
-		runningMemory:  gauge("clickhouse_user_running_memory_bytes", "Memory used by running queries.", l, "user"),
+		runningMemory:  gauge("clickhouse_user_running_memory_bytes", "Current memory used by running queries from system.processes.", l, "user"),
 		runningOldest:  gauge("clickhouse_user_oldest_running_query_seconds", "Elapsed time of the oldest running query.", l, "user"),
 
 		userDatabaseReadBytes:   gauge("clickhouse_user_database_read_bytes_touched", "Bytes read by queries touching this database; a query reading several databases counts in each.", l, "user", "database"),

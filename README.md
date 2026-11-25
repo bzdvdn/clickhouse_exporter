@@ -167,7 +167,7 @@ kubectl -n monitoring create secret generic clickhouse-exporter-dsn \
 helm upgrade --install clickhouse-exporter deploy/helm/clickhouse-exporter \
   --namespace monitoring --create-namespace \
   --set image.repository=ghcr.io/bzdvdn/clickhouse_exporter \
-  --set image.tag=0.1.0 \
+  --set image.tag=0.1.1 \
   --set clickhouse.existingSecret=clickhouse-exporter-dsn \
   --set config.labels.cluster=prod \
   --set config.labels.node=ch-1 \
@@ -179,6 +179,27 @@ ServiceMonitor. See
 [`deploy/helm/clickhouse-exporter/README.md`](deploy/helm/clickhouse-exporter/README.md).
 Run one release per ClickHouse node (or one release with a remote DSN), and
 restart the Deployment after rotating an external DSN Secret.
+
+### Argo CD
+
+The chart is a standard Helm 3 chart and works with Argo CD. A ready
+`Application` is in
+[`deploy/argocd/application.yaml`](deploy/argocd/application.yaml); it uses the
+Git path and `clickhouse.existingSecret`.
+
+- Create the DSN Secret before syncing. The chart deliberately fails if neither
+  `clickhouse.existingSecret` nor `clickhouse.dsn` is set.
+- Enable `serviceMonitor.enabled` only when the Prometheus Operator CRD is
+  installed; otherwise Argo CD will fail on the unknown resource.
+- For the OCI chart, register the registry and use `ghcr.io/bzdvdn/charts` with
+  chart `clickhouse-exporter`:
+
+  ```bash
+  argocd repo add ghcr.io/bzdvdn/charts --type helm --enable-oci
+  ```
+
+  The published chart and image are public, so no registry credentials are
+  needed.
 
 ### 5. Grafana
 
@@ -221,11 +242,13 @@ Every refresh reads a window from `system.query_log` (default 5m) and aggregates
 - `user`, `query_kind`
 - `count()`
 - CPU: `ProfileEvents['OSCPUVirtualTimeMicroseconds']`
-- memory: `sum(memory_usage)` (sum of per-query peaks — a weight, not resident memory)
+- memory: `sum(memory_usage)` — sum of per-query memory usage over the window, not current RAM
 - `read_bytes`, `written_bytes`, `read_rows`, `written_rows`
 - errors: `countIf(exception_code != 0)`, including `ExceptionBeforeStart` (syntax errors, quota and access errors)
 
 Metrics are gauges over the window, not counters: re-reading `query_log` cannot inflate a counter, and late rows do not break monotonicity. In Grafana, divide by the window to get per-second values, e.g. `sum by (user)(chx_clickhouse_user_cpu_seconds) / 300` gives average CPU cores over 5 minutes. The provisioned dashboard assumes the default 5-minute window for workload and tables; change the `/ 300` divisors if you change `workload.window` or `tables.window`.
+
+`chx_clickhouse_user_memory_bytes` is a sum over completed queries, not instantaneous memory. It can exceed the server's RAM because memory usage from different queries does not overlap in time. For current values use `chx_clickhouse_user_running_memory_bytes` (from `system.processes`) and `chx_clickhouse_memory_tracking_bytes` for the server. The dashboard has separate panels for memory pressure (sum over the window) and current memory (running queries).
 
 ### Per user and database
 
@@ -332,6 +355,8 @@ every series.
 | `chx_clickhouse_user_table_parts`, `_written_rows`, `_written_bytes` | `user`, `database`, `table` |
 
 Window sizes are exposed as `chx_clickhouse_exporter_workload_window_seconds` and `chx_clickhouse_exporter_latency_window_seconds`.
+
+`chx_clickhouse_user_memory_bytes` is a sum over the workload window, not current RAM; `chx_clickhouse_user_running_memory_bytes` is the current value from `system.processes`.
 
 ### Tables
 
@@ -454,15 +479,15 @@ service) and `make integration`.
 Push a semver tag:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 [`.github/workflows/release.yml`](.github/workflows/release.yml) publishes:
 
-- multi-arch image `ghcr.io/bzdvdn/clickhouse_exporter:0.1.0` and `:latest`
+- multi-arch image `ghcr.io/bzdvdn/clickhouse_exporter:0.1.1` and `:latest`
   (`linux/amd64`, `linux/arm64`);
-- Helm chart `oci://ghcr.io/bzdvdn/charts/clickhouse-exporter:0.1.0`;
+- Helm chart `oci://ghcr.io/bzdvdn/charts/clickhouse-exporter:0.1.1`;
 - a GitHub release with the packaged chart attached.
 
 Install the published chart:
@@ -470,7 +495,7 @@ Install the published chart:
 ```bash
 helm install clickhouse-exporter \
   oci://ghcr.io/bzdvdn/charts/clickhouse-exporter \
-  --version 0.1.0 \
+  --version 0.1.1 \
   --set clickhouse.existingSecret=clickhouse-exporter-dsn \
   --set config.labels.cluster=prod
 ```
@@ -500,8 +525,8 @@ created public from the start.
 Verify without credentials:
 
 ```bash
-docker pull ghcr.io/bzdvdn/clickhouse_exporter:0.1.0
-helm show chart oci://ghcr.io/bzdvdn/charts/clickhouse-exporter --version 0.1.0
+docker pull ghcr.io/bzdvdn/clickhouse_exporter:0.1.1
+helm show chart oci://ghcr.io/bzdvdn/charts/clickhouse-exporter --version 0.1.1
 ```
 
 The channel is tags only: a normal push to `main` runs CI but does not publish.

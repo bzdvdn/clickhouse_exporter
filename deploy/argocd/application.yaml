@@ -1,0 +1,44 @@
+# Prerequisite:
+#   kubectl -n monitoring create secret generic clickhouse-exporter-dsn \
+#     --from-literal=dsn='clickhouse://exporter:CHANGE_ME@ch-1:9000/default'
+#
+# The chart is a standard Helm 3 chart. This example uses the Git path; the
+# published OCI chart is also supported:
+#   repoURL: ghcr.io/bzdvdn/charts
+#   chart: clickhouse-exporter
+#   targetRevision: 0.1.1
+#
+# OCI repositories must be registered in Argo CD:
+#   argocd repo add ghcr.io/bzdvdn/charts --type helm --enable-oci
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: clickhouse-exporter
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/bzdvdn/clickhouse_exporter.git
+    targetRevision: v0.1.1
+    path: deploy/helm/clickhouse-exporter
+    helm:
+      releaseName: clickhouse-exporter
+      valuesObject:
+        clickhouse:
+          existingSecret: clickhouse-exporter-dsn
+        config:
+          labels:
+            cluster: prod
+            node: ch-1
+        # Enable only if the Prometheus Operator ServiceMonitor CRD is installed.
+        serviceMonitor:
+          enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
